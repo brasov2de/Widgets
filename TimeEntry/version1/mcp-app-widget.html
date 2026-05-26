@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/@fluentui/web-components@beta/dist/web-components.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: var(--fontFamilyBase, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--colorNeutralBackground1, #fff);
+      color: var(--colorNeutralForeground1, #242424);
+    }
+
+    /* ── Week navigation ── */
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .week-label {
+      flex: 1;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .week-total {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--colorNeutralForeground2, #616161);
+    }
+
+    /* ── Days grid ── */
+    .days-scroll {
+      overflow-x: auto;
+    }
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(160px, 1fr));
+      gap: 8px;
+      min-width: 1120px;
+    }
+
+    /* ── Day column ── */
+    .day-column {
+      border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--colorNeutralBackground1, #fff);
+      display: flex;
+      flex-direction: column;
+      min-height: 140px;
+    }
+    .day-column.is-today {
+      border-color: var(--colorBrandBackground, #0078d4);
+      border-width: 2px;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .day-column { transition: background 0.15s ease, border-color 0.15s ease; }
+    }
+    .day-column.drag-over {
+      background: var(--colorNeutralBackground2, #f5f5f5);
+      border-color: var(--colorBrandBackground, #0078d4) !important;
+      border-width: 2px !important;
+    }
+
+    /* ── Day header ── */
+    .day-header {
+      padding: 8px 12px;
+      background: var(--colorNeutralBackground2, #f5f5f5);
+      border-bottom: 1px solid var(--colorNeutralStroke2, #e8e8e8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .day-name {
+      font-weight: 600;
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+    .day-today-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--colorBrandBackground, #0078d4);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .day-total-badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+      background: var(--colorNeutralBackground3, #ebebeb);
+      color: var(--colorNeutralForeground2, #616161);
+    }
+    .day-total-badge.has-entries {
+      background: var(--colorBrandBackground, #0078d4);
+      color: var(--colorNeutralForegroundOnBrand, #fff);
+    }
+
+    /* ── Entries list ── */
+    .entries-list {
+      padding: 6px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .empty-day {
+      padding: 16px 8px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--colorNeutralForeground3, #a0a0a0);
+      flex: 1;
+    }
+
+    /* ── Entry card ── */
+    .entry-row {
+      border: 1px solid var(--colorNeutralStroke2, #e8e8e8);
+      border-left: 3px solid var(--colorBrandBackground, #0078d4);
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: var(--colorNeutralBackground1, #fff);
+      cursor: grab;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .entry-row:active { cursor: grabbing; }
+    @media (prefers-reduced-motion: no-preference) {
+      .entry-row { transition: opacity 0.15s ease, box-shadow 0.15s ease; }
+    }
+    .entry-row:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+    }
+    .entry-row.dragging {
+      opacity: 0.35;
+    }
+    .entry-description {
+      font-size: 0.875rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--colorNeutralForeground1, #242424);
+    }
+    .entry-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .entry-project {
+      font-size: 0.75rem;
+      color: var(--colorNeutralForeground2, #616161);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .entry-duration {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--colorBrandBackground, #0078d4);
+      flex-shrink: 0;
+    }
+
+    /* ── Loading / Error ── */
+    .loading-state, .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+    .error-message {
+      color: var(--colorStatusDangerForeground1, #d13438);
+      font-weight: 500;
+    }
+    .error-hint {
+      font-size: 0.875rem;
+      color: var(--colorNeutralForeground2, #616161);
+    }
+  </style>
+</head>
+<body>
+  <div id="widget-root"></div>
+
+  <script type="module">
+    import { App } from 'https://cdn.jsdelivr.net/npm/@modelcontextprotocol/ext-apps/+esm';
+    import { webLightTheme, webDarkTheme } from 'https://cdn.jsdelivr.net/npm/@fluentui/tokens/+esm';
+
+    // ── State ──
+    let allEntries = [];
+    let currentWeekStart = getWeekStart(new Date());
+    let draggedId = null;
+    let hasRenderedData = false;
+
+    // ── Theme ──
+    function applyTheme(theme) {
+      const tokens = theme === 'dark' ? webDarkTheme : webLightTheme;
+      const root = document.documentElement;
+      for (const [token, value] of Object.entries(tokens)) {
+        root.style.setProperty('--' + token, value);
+      }
+      document.body.style.background = theme === 'dark'
+        ? 'var(--colorNeutralBackground1, #1f1f1f)'
+        : 'var(--colorNeutralBackground1, #fff)';
+      document.body.style.color = theme === 'dark'
+        ? 'var(--colorNeutralForeground1, #e0e0e0)'
+        : 'var(--colorNeutralForeground1, #242424)';
+    }
+
+    // ── Date utilities ──
+    function getWeekStart(date) {
+      const d = new Date(date);
+      const day = d.getDay(); // 0=Sun … 6=Sat
+      const diff = day === 0 ? -6 : 1 - day; // shift to Monday
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function parseEntryDate(value) {
+      if (value == null) return null;
+      const text = String(value).trim();
+      if (text === '') return null;
+
+      const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+      if (dateOnlyMatch) {
+        const [, year, month, day] = dateOnlyMatch;
+        return new Date(Number(year), Number(month) - 1, Number(day));
+      }
+
+      const parsed = new Date(text);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    /** Local-date key YYYY-MM-DD */
+    function dateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    /** Derive local-date key from an ISO entry date */
+    function entryDateKey(isoString) {
+      const parsed = parseEntryDate(isoString);
+      return parsed ? dateKey(parsed) : null;
+    }
+
+    /** Today's local-date key */
+    function todayKey() {
+      return dateKey(new Date());
+    }
+
+    function formatDuration(totalHours) {
+      const hours = parseFloat(totalHours);
+      if (!Number.isFinite(hours) || hours === 0) return '0h';
+
+      const roundedHours = Number.isInteger(hours) ? String(hours) : hours.toFixed(2).replace(/\.?0+$/, '');
+      return `${roundedHours}h`;
+    }
+
+    function formatWeekRange(weekStart) {
+      const weekEnd = addDays(weekStart, 6);
+      const startStr = weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const endStr   = weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      return `${startStr} – ${endStr}`;
+    }
+
+    function formatDayHeader(date) {
+      return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+
+    function normalizeEntry(entry) {
+      const duration = parseFloat(entry?.duration);
+      return {
+        ...entry,
+        timeentryid: String(entry?.timeentryid ?? ''),
+        projectName: (entry?.projectName == null || String(entry.projectName).trim() === '')
+          ? 'Unassigned project'
+          : String(entry.projectName).trim(),
+        projectCategoryName: (entry?.projectCategoryName == null || String(entry.projectCategoryName).trim() === '')
+          ? ''
+          : String(entry.projectCategoryName).trim(),
+        description: (entry?.description == null || String(entry.description).trim() === '')
+          ? ''
+          : String(entry.description).trim(),
+        date: entry?.date ?? '',
+        duration: Number.isFinite(duration) ? duration : 0
+      };
+    }
+
+    function getEntriesFromData(data) {
+      if (Array.isArray(data?.timeEntries)) {
+        return data.timeEntries.map(normalizeEntry);
+      }
+      if (Array.isArray(data)) {
+        return data.map(normalizeEntry);
+      }
+      return [];
+    }
+
+    function getInitialWeekStart(entries) {
+      const firstDatedEntry = entries.find((entry) => parseEntryDate(entry.date));
+      return firstDatedEntry ? getWeekStart(parseEntryDate(firstDatedEntry.date)) : getWeekStart(new Date());
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = String(text ?? '');
+      return div.innerHTML;
+    }
+
+    // ── Render: Loading ──
+    function renderLoading() {
+      document.getElementById('widget-root').innerHTML = `
+        <div class="loading-state">
+          <fluent-spinner></fluent-spinner>
+          <span style="color:var(--colorNeutralForeground2)">Loading time entries…</span>
+        </div>`;
+    }
+
+    // ── Render: Error ──
+    function renderError(message) {
+      hasRenderedData = false;
+      document.getElementById('widget-root').innerHTML = `
+        <div class="error-state">
+          <span class="error-message">⚠ ${escapeHtml(message)}</span>
+          <span class="error-hint">Something went wrong. Please try again in chat.</span>
+        </div>`;
+    }
+
+    // ── Render: Full widget ──
+    function renderWidget() {
+      const root = document.getElementById('widget-root');
+      const today = todayKey();
+      hasRenderedData = true;
+
+      // Build 7-day range for the selected week
+      const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+      const weekKeys = weekDays.map(dateKey);
+
+      // Group entries by local date key
+      const byDay = {};
+      for (const key of weekKeys) byDay[key] = [];
+      for (const entry of allEntries) {
+        const key = entryDateKey(entry.date);
+        if (key && key in byDay) byDay[key].push(entry);
+      }
+
+      // Week total
+      const weekMinutes = weekKeys.reduce(
+        (sum, k) => sum + byDay[k].reduce((s, e) => s + (parseInt(e.duration) || 0), 0), 0
+      );
+
+      // HTML
+      root.innerHTML = `
+        <div class="week-nav">
+          <fluent-button id="btn-prev" appearance="outline" aria-label="Previous week">&#8249;</fluent-button>
+          <div class="week-label">
+            ${escapeHtml(formatWeekRange(currentWeekStart))}
+            <span class="week-total">&nbsp;·&nbsp;${formatDuration(weekMinutes)} total</span>
+          </div>
+          <fluent-button id="btn-next" appearance="outline" aria-label="Next week">&#8250;</fluent-button>
+        </div>
+        <div class="days-scroll">
+          <div class="days-grid">
+            ${weekDays.map((day, i) => buildDayColumn(day, weekKeys[i], byDay[weekKeys[i]], today)).join('')}
+          </div>
+        </div>`;
+
+      // Week navigation
+      root.querySelector('#btn-prev').addEventListener('click', () => {
+        currentWeekStart = addDays(currentWeekStart, -7);
+        renderWidget();
+      });
+      root.querySelector('#btn-next').addEventListener('click', () => {
+        currentWeekStart = addDays(currentWeekStart, 7);
+        renderWidget();
+      });
+
+      setupDragAndDrop();
+    }
+
+    function buildDayColumn(day, key, entries, today) {
+      const isToday = key === today;
+      const total = entries.reduce((s, e) => s + (parseFloat(e.duration) || 0), 0);
+      const hasEntries = entries.length > 0;
+
+      return `
+        <div class="day-column${isToday ? ' is-today' : ''}" data-date-key="${escapeHtml(key)}">
+          <div class="day-header">
+            <span class="day-name">
+              ${escapeHtml(formatDayHeader(day))}
+              ${isToday ? '<span class="day-today-dot" title="Today"></span>' : ''}
+            </span>
+            <span class="day-total-badge${hasEntries ? ' has-entries' : ''}">${formatDuration(total)}</span>
+          </div>
+          <div class="entries-list">
+            ${hasEntries
+              ? entries.map(buildEntryCard).join('')
+              : '<div class="empty-day">Drop entries here</div>'}
+          </div>
+        </div>`;
+    }
+
+    function buildEntryCard(entry) {
+      const id   = String(entry.timeentryid ?? '');
+      const desc = (entry.description == null || String(entry.description).trim() === '')
+        ? '(no description)' : String(entry.description).trim();
+      const project  = String(entry.projectName ?? '').trim();
+      const category = String(entry.projectCategoryName ?? '').trim();
+      const duration = parseFloat(entry.duration) || 0;
+      const tooltip  = project + (category ? ` · ${category}` : '');
+
+      return `
+        <div class="entry-row" draggable="true" data-entry-id="${escapeHtml(id)}" title="${escapeHtml(tooltip)}">
+          <div class="entry-description">${escapeHtml(desc)}</div>
+          <div class="entry-meta">
+            <span class="entry-project">${escapeHtml(project)}</span>
+            <span class="entry-duration">${formatDuration(duration)}</span>
+          </div>
+        </div>`;
+    }
+
+    // ── Drag & Drop ──
+    function setupDragAndDrop() {
+      const root = document.getElementById('widget-root');
+
+      // Draggable entry rows
+      root.querySelectorAll('.entry-row').forEach(row => {
+        row.addEventListener('dragstart', e => {
+          draggedId = row.dataset.entryId;
+          row.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', draggedId);
+        });
+        row.addEventListener('dragend', () => {
+          row.classList.remove('dragging');
+        });
+      });
+
+      // Drop zones: entire day columns
+      root.querySelectorAll('.day-column').forEach(col => {
+        col.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          col.classList.add('drag-over');
+        });
+
+        col.addEventListener('dragleave', e => {
+          if (!col.contains(e.relatedTarget)) {
+            col.classList.remove('drag-over');
+          }
+        });
+
+        col.addEventListener('drop', e => {
+          e.preventDefault();
+          col.classList.remove('drag-over');
+
+          const targetKey = col.dataset.dateKey;
+          if (!draggedId || !targetKey) return;
+
+          const entry = allEntries.find(en => String(en.timeentryid) === draggedId);
+          if (!entry) return;
+
+          const currentKey = entryDateKey(entry.date);
+          if (currentKey === targetKey) return;
+
+          const originalText = String(entry.date ?? '').trim();
+          const originalDate = parseEntryDate(originalText);
+          if (!originalDate) return;
+
+          if (/^\d{4}-\d{2}-\d{2}$/.test(originalText)) {
+            entry.date = targetKey;
+          } else {
+            const [y, mo, d] = targetKey.split('-').map(Number);
+            const updated = new Date(y, mo - 1, d, originalDate.getHours(), originalDate.getMinutes(), originalDate.getSeconds());
+            entry.date = updated.toISOString();
+          }
+
+          draggedId = null;
+          renderWidget();
+        });
+      });
+    }
+
+    function loadData(data) {
+      const entries = getEntriesFromData(data);
+      if (entries.length === 0) {
+        renderError('No time entries received.');
+        return;
+      }
+
+      allEntries = entries;
+      currentWeekStart = getInitialWeekStart(entries);
+      renderWidget();
+    }
+
+    async function loadPreviewData() {
+      try {
+        const SAMPLE_DATA= {
+  "filterParams": {
+    "dateFrom": "2026-05-04",
+    "dateTo": "2026-05-11"
+  },
+  "timeEntries": [
+    {
+      "timeentryid": "de961fbb-df4a-f111-bec6-7c1e521713fd",
+      "projectid": "09dd2bb6-032a-f111-88b5-002248325389",
+      "projectName": "AI Demo",
+      "projectCategory": "Invest",
+      "projectCategoryName": "Invest",
+      "taskDescription": "EPPC Meeting1",
+      "date": "2026-05-04",
+      "duration": 240
+    },
+    {
+      "timeentryid": "d7fd6221-e04a-f111-bec6-7c1e521713fd",
+      "projectid": "f277f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Holidays",
+      "projectCategory": "Absence",
+      "projectCategoryName": "Absence",
+      "taskDescription": "KickOff Meetings Fusion devs",
+      "date": "2026-05-07",
+      "duration": 120
+    },
+    {
+      "timeentryid": "a728f637-e24a-f111-bec6-7c1e521713fd",
+      "projectid": "09dd2bb6-032a-f111-88b5-002248325389",
+      "projectName": "AI Demo",
+      "projectCategory": "Invest",
+      "projectCategoryName": "Invest",
+      "taskDescription": "E-Mails & News meeting",
+      "date": "2026-05-07",
+      "duration": 180
+    },
+    {
+      "timeentryid": "3902e1f9-404d-f111-bec6-7ced8dd6050a",
+      "projectid": "09e35d36-f129-f111-88b5-002248325389",
+      "projectName": "Magic React",
+      "projectCategory": "Standard",
+      "projectCategoryName": "Standard",
+      "taskDescription": "React Testing",
+      "date": "2026-05-10",
+      "duration": 240
+    }
+  ]
+};       
+        const data = SAMPLE_DATA; 
+          loadData(data);        
+      } catch (error) {
+        if (!hasRenderedData) {
+          renderError('No data received from the host or dummyData.json.');
+        }
+      }
+    }
+
+    // ── MCP App setup ──
+    renderLoading();
+
+    const app = new App({ name: 'time-tracker-weekly', version: '1.0.0' });
+
+    app.ontoolresult = (result) => {
+      const data = result.structuredContent;
+      loadData(data);
+    };
+
+    app.onhostcontextchanged = (ctx) => {
+      if (ctx?.theme) applyTheme(ctx.theme);
+    };
+
+    app.onteardown = () => ({});
+
+    try {
+      await app.connect();
+
+      const hostCtx = app.getHostContext();
+      if (hostCtx?.theme) applyTheme(hostCtx.theme);
+
+      setTimeout(() => {
+        if (!hasRenderedData) {
+          loadPreviewData();
+        }
+      }, 300);
+    } catch (error) {
+      await loadPreviewData();
+    }
+  </script>
+</body>
+</html>

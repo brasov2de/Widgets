@@ -1,0 +1,48 @@
+{
+  "filterParams": {
+    "dateFrom": "2026-05-04",
+    "dateTo": "2026-05-11"
+  },
+  "timeEntries": [
+    {
+      "timeentryid": "de961fbb-df4a-f111-bec6-7c1e521713fd",
+      "projectid": "09dd2bb6-032a-f111-88b5-002248325389",
+      "projectName": "AI Demo",
+      "projectCategory": "Invest",
+      "projectCategoryName": "Invest",
+      "taskDescription": "EPPC Meeting1",
+      "date": "2026-05-04",
+      "duration": 240
+    },
+    {
+      "timeentryid": "d7fd6221-e04a-f111-bec6-7c1e521713fd",
+      "projectid": "f277f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Holidays",
+      "projectCategory": "Absence",
+      "projectCategoryName": "Absence",
+      "taskDescription": "KickOff Meetings Fusion devs",
+      "date": "2026-05-07",
+      "duration": 120
+    },
+    {
+      "timeentryid": "a728f637-e24a-f111-bec6-7c1e521713fd",
+      "projectid": "09dd2bb6-032a-f111-88b5-002248325389",
+      "projectName": "AI Demo",
+      "projectCategory": "Invest",
+      "projectCategoryName": "Invest",
+      "taskDescription": "E-Mails & News meeting",
+      "date": "2026-05-07",
+      "duration": 180
+    },
+    {
+      "timeentryid": "3902e1f9-404d-f111-bec6-7ced8dd6050a",
+      "projectid": "09e35d36-f129-f111-88b5-002248325389",
+      "projectName": "Magic React",
+      "projectCategory": "Standard",
+      "projectCategoryName": "Standard",
+      "taskDescription": "React Testing",
+      "date": "2026-05-10",
+      "duration": 240
+    }
+  ]
+}
