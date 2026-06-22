@@ -2,7 +2,7 @@
 TimeEntryWeekView Proposals
 
 # Tool description: 
-Shows time entry proposals from another sources, and compares them with the weekly time entries for a specific week. The tool will get the proposals passed from outside.
+Shows time entry proposals from appointments, and compares them with the weekly time entries for a specific week. The chat passes the appointments as proposals to the tool. Pass title, start and durationHours in a JSON format.
 
 # Instructions:
 You are a user who wants to get time entries proposals from other sources (like appointments) and compare them with this time entries for a specific week.
