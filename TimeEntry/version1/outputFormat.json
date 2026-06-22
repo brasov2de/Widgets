@@ -1,0 +1,68 @@
+{
+  "filterParams": {
+    "dateFrom": "2026-01-05",
+    "dateTo": "2026-01-12"
+  },
+  "timeEntries": [
+    {
+      "timeentryid": "3e3bb247-d229-f111-88b5-002248325389",
+      "projectid": "f577f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Dummy Project 10",
+      "projectCategory": 0,
+      "projectCategoryName": "Internal",
+      "taskDescription": "Trying Widgets",
+      "date": "2026-01-05",
+      "duration": 270
+    },
+    {
+      "timeentryid": "3f3bb247-d229-f111-88b5-002248325389",
+      "projectid": "f577f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Dummy Project 10",
+      "projectCategory": 0,
+      "projectCategoryName": "Internal",
+      "taskDescription": "Magic React entry",
+      "date": "2026-01-06",
+      "duration": 120
+    },
+    {
+      "timeentryid": "423bb247-d229-f111-88b5-002248325389",
+      "projectid": "f577f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Dummy Project 10",
+      "projectCategory": 0,
+      "projectCategoryName": "Internal",
+      "taskDescription": "Dummy time entry 008",
+      "date": "2026-01-07",
+      "duration": 180
+    },
+    {
+      "timeentryid": "413bb247-d229-f111-88b5-002248325389",
+      "projectid": "f577f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Dummy Project 10",
+      "projectCategory": 0,
+      "projectCategoryName": "Internal",
+      "taskDescription": "Dummy time entry 009",
+      "date": "2026-01-08",
+      "duration": 180
+    },
+    {
+      "timeentryid": "443bb247-d229-f111-88b5-002248325389",
+      "projectid": "f577f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Dummy Project 10",
+      "projectCategory": 0,
+      "projectCategoryName": "Internal",
+      "taskDescription": "Dummy time entry 010",
+      "date": "2026-01-09",
+      "duration": 180
+    },
+    {
+      "timeentryid": "433bb247-d229-f111-88b5-002248325389",
+      "projectid": "f577f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Dummy Project 10",
+      "projectCategory": 0,
+      "projectCategoryName": "Internal",
+      "taskDescription": "Dummy time entry 011",
+      "date": "2026-01-10",
+      "duration": 150
+    }
+  ]
+}
