@@ -3,19 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tool Input Viewer</title>
   <script src="https://unpkg.com/@fluentui/web-components@beta/dist/web-components.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
+
     body {
       margin: 0;
-      padding: 24px;
+      padding: 16px;
       font-family: var(--fontFamilyBase, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
       font-size: 14px;
       line-height: 1.5;
       background: var(--colorNeutralBackground1, #fff);
       color: var(--colorNeutralForeground1, #242424);
-      overflow-x: hidden;
     }
 
     #widget-root {
@@ -24,275 +23,1185 @@
       gap: 16px;
     }
 
-    .header {
+    .widget-meta {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+      gap: 12px;
+    }
+    .meta-card {
+      border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+      border-radius: 16px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--colorNeutralBackground2, #f5f5f5), var(--colorNeutralBackground1, #fff));
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+    .meta-card-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--colorNeutralForeground2, #616161);
+    }
+    .meta-card-value {
+      margin-top: 6px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--colorNeutralForeground1, #242424);
+    }
+    .meta-card-subtitle {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: var(--colorNeutralForeground2, #616161);
+    }
+    .filter-pill-row {
       display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--colorNeutralStroke2, #e8e8e8);
+      background: var(--colorNeutralBackground1, #fff);
+      color: var(--colorNeutralForeground1, #242424);
+    }
+    .filter-key {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--colorNeutralForeground2, #616161);
+    }
+    .filter-value {
+      font-size: 0.82rem;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+    .filter-empty {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--colorNeutralForeground3, #a0a0a0);
+    }
+
+    /* ── Week navigation ── */
+    .week-nav {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 8px;
+      margin-bottom: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 4px;
+      border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--colorNeutralBackground2, #f5f5f5), var(--colorNeutralBackground1, #fff));
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
     }
-
-    .header-title {
-      font-size: 1rem;
+    .week-label {
+      min-width: 0;
+      text-align: center;
       font-weight: 600;
-      color: var(--colorNeutralForeground1);
-      margin: 0;
-    }
-
-    .date-range {
-      font-size: 0.75rem;
-      color: var(--colorNeutralForeground3, #616161);
-      margin-left: auto;
-    }
-
-    .meta-row {
+      font-size: 1rem;
       display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .week-total {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--colorNeutralForeground2, #616161);
+    }
+    .week-nav fluent-button {
+      cursor: pointer;
+    }
+    .week-nav fluent-button::part(control) {
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .week-nav fluent-button:hover::part(control) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    }
+
+    .week-summary-gallery {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .summary-pill {
+      border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--colorNeutralBackground1, #fff), var(--colorNeutralBackground2, #f5f5f5));
+      padding: 8px;
+      min-width: 0;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    }
+    .summary-pill.has-hours {
+      border-color: #2f855a;
+      background: linear-gradient(135deg, #f2fbf6, #e0f4e8);
+      box-shadow: 0 8px 18px rgba(47, 133, 90, 0.18);
+    }
+    .summary-pill.has-hours .summary-day {
+      color: #1f5f3f;
+    }
+    .summary-pill.has-hours .summary-value {
+      color: #174d33;
+    }
+    .summary-pill.has-hours .summary-date {
+      color: #245d3f;
+    }
+    .summary-pill.is-today {
+      border-color: var(--colorBrandBackground, #0078d4);
+      box-shadow: 0 0 0 1px var(--colorBrandBackground, #0078d4), 0 12px 24px rgba(0, 120, 212, 0.12);
+    }
+    .summary-pill.has-hours.is-today {
+      background: linear-gradient(135deg, #edf6ff, #ddf0ff);
+      box-shadow: 0 0 0 1px var(--colorBrandBackground, #0078d4), 0 14px 28px rgba(0, 120, 212, 0.2);
+    }
+    .summary-pill.has-hours.is-today .summary-day,
+    .summary-pill.has-hours.is-today .summary-date {
+      color: #0f4f85;
+    }
+    .summary-pill.has-hours.is-today .summary-value {
+      color: #0b3a63;
+    }
+    .summary-day {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--colorNeutralForeground2, #616161);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .summary-value {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--colorNeutralForeground1, #242424);
+      line-height: 1.2;
+    }
+    .summary-date {
+      margin-top: 2px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--colorNeutralForeground2, #616161);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .summary-meta {
+      margin-top: 2px;
+      font-size: 0.68rem;
+      color: var(--colorNeutralForeground3, #a0a0a0);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Days grid ── */
+    .days-scroll {
+      overflow: visible;
+    }
+    .days-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    /* ── Day column ── */
+    .day-column {
+      position: relative;
+      border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+      border-radius: 16px;
+      overflow: hidden;
+      background: linear-gradient(180deg, var(--colorNeutralBackground2, #f5f5f5), var(--colorNeutralBackground1, #fff));
+      display: flex;
+      flex-direction: column;
+      min-height: 140px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    }
+    .day-column::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%);
+    }
+    .day-column.is-today {
+      border-color: var(--colorBrandBackground, #0078d4);
+      box-shadow: 0 0 0 1px var(--colorBrandBackground, #0078d4), 0 14px 36px rgba(0, 120, 212, 0.16);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .day-column {
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      }
+    }
+    .day-column:hover {
+      transform: translateY(-2px);
+    }
+    .day-column.drag-over {
+      background: linear-gradient(180deg, var(--colorNeutralBackground3, #ebebeb), var(--colorNeutralBackground1, #fff));
+      border-color: var(--colorBrandBackground, #0078d4) !important;
+      box-shadow: 0 0 0 1px var(--colorBrandBackground, #0078d4), 0 14px 36px rgba(0, 120, 212, 0.18);
+      transform: translateY(-2px);
+    }
+
+    /* ── Day header ── */
+    .day-header {
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--colorNeutralBackground3, #ebebeb), var(--colorNeutralBackground2, #f5f5f5));
+      border-bottom: 1px solid var(--colorNeutralStroke2, #e8e8e8);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
       gap: 12px;
       flex-wrap: wrap;
     }
-
-    .meta-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.75rem;
+    .day-name {
       font-weight: 600;
-      padding: 2px 10px;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+    .day-today-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--colorBrandBackground, #0078d4);
+      margin-left: 6px;
+      vertical-align: middle;
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--colorBrandBackground, #0078d4) 18%, transparent);
+    }
+    .entries-list {
+      padding: 12px 16px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .empty-day {
+      padding: 20px 12px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--colorNeutralForeground3, #a0a0a0);
+      border: 1px dashed var(--colorNeutralStroke2, #e8e8e8);
       border-radius: 12px;
       background: var(--colorNeutralBackground2, #f5f5f5);
-      color: var(--colorNeutralForeground2, #424242);
-      border: 1px solid var(--colorNeutralStroke2, #e0e0e0);
+      grid-column: 1 / -1;
     }
 
-    .textarea-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--colorNeutralForeground2, #424242);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+    .entries-table-shell {
+      border: 1px solid var(--colorNeutralStroke2, #e8e8e8);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--colorNeutralBackground1, #fff);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
     }
-
-    fluent-textarea {
+    .entries-table {
       width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
     }
-
-    fluent-textarea::part(control) {
-      font-family: 'Cascadia Code', 'Consolas', 'Fira Mono', monospace;
-      font-size: 12px;
-      line-height: 1.6;
-      resize: vertical;
-      min-height: 280px;
+    .entries-table thead th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--colorNeutralForeground2, #616161);
       background: var(--colorNeutralBackground2, #f5f5f5);
+      border-bottom: 1px solid var(--colorNeutralStroke2, #e8e8e8);
+    }
+    .entries-table tbody tr {
+      cursor: grab;
+      user-select: none;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .entries-table tbody tr {
+        transition: transform 0.2s ease, background 0.2s ease, opacity 0.15s ease;
+      }
+    }
+    .entries-table tbody tr:hover {
+      background: var(--colorNeutralBackground2, #f5f5f5);
+      transform: translateY(-1px);
+    }
+    .entries-table tbody tr + tr td {
+      border-top: 1px solid var(--colorNeutralStroke2, #e8e8e8);
+    }
+    .entries-table td {
+      padding: 12px;
+      vertical-align: top;
       color: var(--colorNeutralForeground1, #242424);
-      border-color: var(--colorNeutralStroke1, #d1d1d1);
-      border-radius: 8px;
+    }
+    .entry-row {
+      position: relative;
+    }
+    .entry-row:active {
+      cursor: grabbing;
+    }
+    .entry-row.dragging {
+      opacity: 0.35;
+      transform: scale(0.99);
+    }
+    .entry-category-cell {
+      width: 16px;
+      padding: 0 !important;
+      background: var(--colorNeutralBackground1, #fff);
+    }
+    .entry-category-bar {
+      width: 100%;
+      min-height: 52px;
+      background: var(--entry-accent, var(--colorBrandBackground, #0078d4));
+    }
+    .entry-description {
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      color: var(--colorNeutralForeground1, #242424);
+    }
+    .entry-project {
+      font-size: 0.8rem;
+      color: var(--colorNeutralForeground2, #616161);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .entry-category-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--colorNeutralForeground2, #616161);
+    }
+    .entry-duration {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--colorBrandBackground, #0078d4);
+      color: var(--colorNeutralForegroundOnBrand, #fff);
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      box-shadow: 0 8px 18px rgba(0, 120, 212, 0.18);
     }
 
-    .copy-row {
-      display: flex;
-      justify-content: flex-end;
+    @media (max-width: 640px) {
+      body {
+        padding: 12px;
+      }
+
+      .widget-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .week-label {
+        font-size: 0.95rem;
+      }
+
+      .week-summary-gallery {
+        gap: 4px;
+      }
+
+      .summary-pill {
+        padding: 6px 4px;
+        border-radius: 10px;
+      }
+
+      .summary-day {
+        font-size: 0.62rem;
+        letter-spacing: 0.02em;
+      }
+
+      .summary-value {
+        font-size: 0.78rem;
+      }
+
+      .summary-meta {
+        font-size: 0.62rem;
+      }
+
+      .entries-table,
+      .entries-table thead,
+      .entries-table tbody,
+      .entries-table tr,
+      .entries-table th,
+      .entries-table td {
+        display: block;
+      }
+
+      .entries-table thead {
+        display: none;
+      }
+
+      .entries-table tbody tr {
+        display: grid;
+        grid-template-columns: 10px 1fr;
+      }
+
+      .entries-table tbody tr + tr td {
+        border-top: 0;
+      }
+
+      .entry-category-cell {
+        grid-row: 1 / span 4;
+      }
+
+      .entries-table td {
+        padding: 8px 12px;
+      }
+
+      .entry-value-cell {
+        padding-top: 0;
+      }
     }
 
+    /* ── Loading / Error ── */
     .loading-state, .error-state {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 12px;
-      padding: 32px 16px;
+      padding: 40px;
       text-align: center;
-      color: var(--colorNeutralForeground2, #424242);
     }
-
-    .error-state {
-      color: var(--colorStatusDangerForeground1, #bc2f32);
+    .error-message {
+      color: var(--colorStatusDangerForeground1, #d13438);
+      font-weight: 500;
     }
-
-    @media (prefers-reduced-motion: no-preference) {
-      fluent-button {
-        transition: opacity 0.2s ease;
-      }
+    .error-hint {
+      font-size: 0.875rem;
+      color: var(--colorNeutralForeground2, #616161);
     }
   </style>
 </head>
 <body>
   <div id="widget-root"></div>
+
   <script type="module">
     import { App } from 'https://cdn.jsdelivr.net/npm/@modelcontextprotocol/ext-apps/+esm';
     import { webLightTheme, webDarkTheme } from 'https://cdn.jsdelivr.net/npm/@fluentui/tokens/+esm';
 
-    const root = document.getElementById('widget-root');
+    // ── State ──
+    //let allEntries = [];
+    let currentFilterParams = [];
+    let currentWeekStart = getWeekStart(new Date());
+    let draggedId = null;
     let hasRenderedData = false;
+    let myResult = {};    
+    let version = "34";
 
-    function loadPreviewData() {
-      renderData({
-        "dateFrom": "2026-05-04",
-        "dateTo": "2026-05-11",
-        "timeEntries": [
-          {
-            "id": "76b7ee00-3a50-f111-a824-0022481f023c",
-            "date": "2026-05-08T00:00:00Z",
-            "duration_hours": 60,
-            "taskDescription": "Widgets filtering1",
-            "project": {
-              "id": "09e35d36-f129-f111-88b5-002248325389",
-              "name": "Magic React",
-              "category": null,
-              "description": null
-            },
-            "owner": "Diana Birkelbach"
-          }
-        ],
-        "passedProposals": [
-          {
-            "start": "2026-06-22T12:00:00Z",
-            "duration": 120,
-            "title": "test Magic",
-            "project": {
-              "id": "09e35d36-f129-f111-88b5-002248325389",
-              "name": "Magic React",
-              "category": null,
-              "description": null
-            }
-          }
-        ]
-      });
-    }
-
+    // ── Theme ──
     function applyTheme(theme) {
       const tokens = theme === 'dark' ? webDarkTheme : webLightTheme;
-      const docRoot = document.documentElement;
+      const root = document.documentElement;
       for (const [token, value] of Object.entries(tokens)) {
-        docRoot.style.setProperty('--' + token, value);
+        root.style.setProperty('--' + token, value);
       }
       document.body.style.background = theme === 'dark'
-        ? 'var(--colorNeutralBackground1, #292929)'
+        ? 'var(--colorNeutralBackground1, #1f1f1f)'
         : 'var(--colorNeutralBackground1, #fff)';
       document.body.style.color = theme === 'dark'
         ? 'var(--colorNeutralForeground1, #e0e0e0)'
         : 'var(--colorNeutralForeground1, #242424)';
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = String(text);
-      return div.innerHTML;
+    // ── Date utilities ──
+    function getWeekStart(date) {
+      /*const d = new Date(date);
+      const day = d.getDay(); // 0=Sun … 6=Sat
+      const diff = day === 0 ? -6 : 1 - day; // shift to Monday
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+      return d;*/
+      return date;
     }
 
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
-      try {
-        return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-      } catch { return dateStr; }
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
     }
 
-    function renderLoading() {
-      root.innerHTML = `
-        <div class="loading-state">
-          <fluent-spinner></fluent-spinner>
-          <span>Loading tool output…</span>
-        </div>`;
-    }
+    function parseEntryDate(value) {
+      if (value == null) return null;
+      const text = String(value).trim();
+      if (text === '') return null;
 
-    function renderError(message) {
-      root.innerHTML = `
-        <div class="error-state">
-          <span>⚠ ${escapeHtml(message)}</span>
-          <fluent-button id="retry-btn" appearance="outline">Try again</fluent-button>
-        </div>`;
-    }
-
-    function renderData(data) {
-      hasRenderedData = true;
-
-      const dateFrom = (data.dateFrom == null || String(data.dateFrom).trim() === '') ? null : String(data.dateFrom).trim();
-      const dateTo   = (data.dateTo   == null || String(data.dateTo).trim()   === '') ? null : String(data.dateTo).trim();
-      const timeEntries    = Array.isArray(data.timeEntries)    ? data.timeEntries    : [];
-      const passedProposals = Array.isArray(data.passedProposals) ? data.passedProposals : [];
-
-      const dateRangeText = (dateFrom && dateTo)
-        ? `${formatDate(dateFrom)} – ${formatDate(dateTo)}`
-        : (dateFrom || dateTo || '');
-
-      const prettyJson = JSON.stringify(data, null, 2);
-
-      root.innerHTML = `
-        <div class="header">
-          <h2 class="header-title">Tool Output</h2>
-          ${dateRangeText ? `<span class="date-range">${escapeHtml(dateRangeText)}</span>` : ''}
-        </div>
-
-        <div class="meta-row">
-          <span class="meta-badge">⏱ ${timeEntries.length} time entr${timeEntries.length === 1 ? 'y' : 'ies'}</span>
-          <span class="meta-badge">📋 ${passedProposals.length} proposal${passedProposals.length === 1 ? '' : 's'}</span>
-        </div>
-
-        <div class="textarea-label">Raw JSON</div>
-
-        <fluent-textarea id="json-output" readonly resize="vertical">
-          <textarea id="json-textarea" readonly>${escapeHtml(prettyJson)}</textarea>
-        </fluent-textarea>
-
-        <div class="copy-row">
-          <fluent-button id="copy-btn" appearance="outline">Copy JSON</fluent-button>
-        </div>`;
-
-      // Use the inner textarea value for proper monospace display
-      const textarea = root.querySelector('fluent-textarea');
-      if (textarea) {
-        // Set value via property after render
-        requestAnimationFrame(() => {
-          const inner = root.querySelector('#json-textarea') || textarea;
-          if (inner && inner !== textarea) {
-            inner.value = prettyJson;
-          }
-          // Try the fluent-textarea value property
-          try { textarea.value = prettyJson; } catch (_) {}
-        });
+      const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+      if (dateOnlyMatch) {
+        const [, year, month, day] = dateOnlyMatch;
+        return new Date(Number(year), Number(month) - 1, Number(day));
       }
 
-      root.querySelector('#copy-btn')?.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(prettyJson);
-          const btn = root.querySelector('#copy-btn');
-          if (btn) {
-            btn.textContent = 'Copied!';
-            setTimeout(() => { btn.textContent = 'Copy JSON'; }, 1500);
-          }
-        } catch (_) {}
+      const parsed = new Date(text);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    /** Local-date key YYYY-MM-DD */
+    function dateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    /** Derive local-date key from an ISO entry date */
+    function entryDateKey(isoString) {
+      const parsed = parseEntryDate(isoString);
+      return parsed ? dateKey(parsed) : null;
+    }
+
+    /** Today's local-date key */
+    function todayKey() {
+      return dateKey(new Date());
+    }
+
+    function formatDuration(totalHours) {
+      const hours = parseFloat(totalHours);
+      if (!Number.isFinite(hours) || hours === 0) return '0h';
+
+      const durationInHours = Number.isInteger(hours) ? (hours / 60) : hours;
+      const roundedHours = Math.round(durationInHours * 100) / 100;
+      return `${roundedHours.toFixed(2)}h`;
+    }
+
+    function formatWeekRange(weekStart) {
+      const weekEnd = addDays(weekStart, 6);
+      const startStr = weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const endStr   = weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      return `${startStr} – ${endStr}`;
+    }
+
+    function formatDayHeader(date) {
+      return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+
+    function formatSummaryDay(date) {
+      return date.toLocaleDateString(undefined, { weekday: 'short' });
+    }
+
+    function formatSummaryDate(date) {
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function normalizeEntry(entry) {
+      const duration = parseFloat(entry?.duration);
+      return {
+        ...entry,
+        timeentryid: String(entry?.timeentryid ?? ''),
+        projectName: (entry?.projectName == null || String(entry.projectName).trim() === '')
+          ? 'Unassigned project'
+          : String(entry.projectName).trim(),
+        projectCategoryName: (entry?.projectCategoryName == null || String(entry.projectCategoryName).trim() === '')
+          ? ''
+          : String(entry.projectCategoryName).trim(),
+        description: (entry?.taskDescription == null || String(entry.taskDescription).trim() === '')
+          ? ''
+          : String(entry.taskDescription).trim(),
+        date: entry?.date ?? '',
+        duration: Number.isFinite(duration) ? duration : 0
+      };
+    }
+
+    function formatFilterLabel(key) {
+      return String(key ?? '')
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function formatFilterValue(value) {
+      if (value == null) return '';
+
+      const text = String(value).trim();
+      if (text === '') return '';
+
+      const parsedDate = parseEntryDate(text);
+      if (parsedDate && /^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        return parsedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
+      return text;
+    }
+
+    function getFilterParamsFromData(data) {
+      if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+        return [];
+      }
+
+      const rawFilters = data.filterParams;
+      if (rawFilters == null || typeof rawFilters !== 'object' || Array.isArray(rawFilters)) {
+        return [];
+      }
+
+      return Object.entries(rawFilters).flatMap(([key, value]) => {
+        const formattedValue = formatFilterValue(value);
+        if (formattedValue === '') {
+          return [];
+        }
+
+        return [{
+          key: formatFilterLabel(key),
+          value: formattedValue
+        }];
       });
     }
 
-    // Show loading immediately
+    function getEntriesFromProposals(data) {
+      if (Array.isArray(data?.proposals)) {
+        proposals = data.proposals.map(normalizeEntry);
+      }
+      dateFrom = parseEntryDate(data?.dateFrom);
+      dateTo = parseEntryDate(data?.dateTo);      
+    }
+
+    function getInitialWeekStart() {
+      const filterDateFrom = parseEntryDate(dateFrom);
+      if (filterDateFrom) {
+        return getWeekStart(filterDateFrom);
+      }
+
+      const firstDatedEntry = entries.find((entry) => parseEntryDate(entry.date));
+      return firstDatedEntry ? getWeekStart(parseEntryDate(firstDatedEntry.date)) : getWeekStart(new Date());
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = String(text ?? '');
+      return div.innerHTML;
+    }
+
+    function getCategoryAccent(category) {
+      const palette = ['#ff6b6b', '#f59e0b', '#22c55e', '#06b6d4', '#6366f1', '#d946ef', '#14b8a6'];
+      const text = (category == null || String(category).trim() === '')
+        ? 'uncategorized'
+        : String(category).trim().toLowerCase();
+
+      let hash = 0;
+      for (let index = 0; index < text.length; index += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+      }
+
+      return palette[Math.abs(hash) % palette.length];
+    }
+
+    // ── Render: Loading ──
+    function renderLoading() {
+      document.getElementById('widget-root').innerHTML = `
+        <div class="loading-state">
+          <fluent-spinner></fluent-spinner>
+          <span style="color:var(--colorNeutralForeground2)">Loading time entries…</span>
+        </div>`;
+    }
+
+    // ── Render: Error ──
+    function renderError(message) {
+      hasRenderedData = false;
+      document.getElementById('widget-root').innerHTML = `
+        <div class="error-state">
+          <span class="error-message">⚠ ${escapeHtml(message)}</span>
+          <span class="error-hint">Something went wrong. Please try again in chat.</span>
+        </div>`;
+    }
+
+    // ── Render: Full widget ──
+    function renderWidget() {
+      const root = document.getElementById('widget-root');
+      const today = todayKey();
+      hasRenderedData = true;
+
+      // Build 7-day range for the selected week
+      const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+      const weekKeys = weekDays.map(dateKey);
+      const recordsCount = timeEntries.length;
+
+      // Group entries by local date key
+      const byDay = {};
+      for (const key of weekKeys) byDay[key] = [];
+      for (const entry of timeEntries) {
+        const key = entryDateKey(entry.date);
+        if (key && key in byDay) byDay[key].push(entry);
+      }
+
+      // Week total
+      const weekMinutes = weekKeys.reduce(
+        (sum, k) => sum + byDay[k].reduce((s, e) => s + (parseInt(e.duration) || 0), 0), 0
+      );
+
+      const weekSummary = weekDays.map((day, index) => {
+        const key = weekKeys[index];
+        const entries = byDay[key];
+        const total = entries.reduce((sum, entry) => sum + (parseFloat(entry.duration) || 0), 0);
+        return `
+          <div class="summary-pill${total > 0 ? ' has-hours' : ''}${key === today ? ' is-today' : ''}">
+            <div class="summary-day">${escapeHtml(formatSummaryDay(day))}</div>
+            <div class="summary-value">${formatDuration(total)}</div>
+            <div class="summary-date">${escapeHtml(formatSummaryDate(day))}</div>
+          </div>`;
+      }).join('');
+
+      // HTML
+      root.innerHTML = `
+        <div class="widget-meta">
+          <div class="meta-card">
+            <div class="meta-card-label">Version ${version}</div>
+            <textarea rows="2" cols="50"  readonly 
+              style="width:100%;margin-top:8px;font-size:0.75rem;padding:6px 10px;border-radius:8px;border:1px solid var(--colorNeutralStroke2, #e8e8e8);background:var(--colorNeutralBackground1, #fff);color:var(--colorNeutralForeground1, #242424);"
+              >
+              ${escapeHtml(JSON.stringify(myResult ?? {}))}
+              </textarea>            
+          </div>
+          <div class="meta-card">
+            <div class="meta-card-label">Time entries</div>
+            <div class="meta-card-value">${escapeHtml(String(recordsCount))}</div>
+            <div class="meta-card-subtitle">records received</div>
+          </div>
+        </div>
+        <div class="week-nav">
+          <fluent-button id="btn-prev" appearance="outline" aria-label="Previous week">&#8249;</fluent-button>
+          <div class="week-label">
+            ${escapeHtml(formatWeekRange(currentWeekStart))}
+            <span class="week-total">&nbsp;·&nbsp;${formatDuration(weekMinutes)} total</span>
+          </div>
+          <fluent-button id="btn-next" appearance="outline" aria-label="Next week">&#8250;</fluent-button>
+        </div>
+        <div class="week-summary-gallery" aria-label="Weekly totals by day">
+          ${weekSummary}
+        </div>
+        <div class="days-scroll">
+          <div class="days-grid">
+            ${weekDays.map((day, i) => buildDayColumn(day, weekKeys[i], byDay[weekKeys[i]], today)).join('')}
+          </div>
+        </div>`;
+
+      // Week navigation
+      root.querySelector('#btn-prev').addEventListener('click', () => {
+        currentWeekStart = addDays(currentWeekStart, -7);
+        const newStartDate = new Date(currentWeekStart);;
+        loadTimeEntries(newStartDate);
+        renderWidget();
+      });
+      root.querySelector('#btn-next').addEventListener('click', () => {
+        currentWeekStart = addDays(currentWeekStart, 7);
+        const newStartDate = new Date(currentWeekStart);;
+        loadTimeEntries(newStartDate);
+        renderWidget();
+      });
+
+      setupDragAndDrop();
+    }
+
+    function buildDayColumn(day, key, entries, today) {
+      const isToday = key === today;
+      const hasEntries = entries.length > 0;
+
+      return `
+        <div class="day-column${isToday ? ' is-today' : ''}" data-date-key="${escapeHtml(key)}">
+          <div class="day-header">
+            <span class="day-name">
+              ${escapeHtml(formatDayHeader(day))}
+              ${isToday ? '<span class="day-today-dot" title="Today"></span>' : ''}
+            </span>
+          </div>
+          <div class="entries-list">
+            ${hasEntries
+              ? buildEntriesTable(entries)
+              : '<div class="empty-day">Drop entries here</div>'}
+          </div>
+        </div>`;
+    }
+
+    function buildEntriesTable(entries) {
+      return `
+        <div class="entries-table-shell">
+          <table class="entries-table" aria-label="Time entries">
+            <thead>
+              <tr>
+                <th style="width:16px" aria-hidden="true"></th>
+                <th>Description</th>
+                <th>Project</th>
+                <th>Category</th>
+                <th style="width:96px">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${entries.map(buildEntryRow).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function buildEntryRow(entry) {
+      const id   = String(entry.timeentryid ?? '');
+      const desc = (entry.taskDescription == null || String(entry.taskDescription).trim() === '')
+        ? '(no description)' : String(entry.taskDescription).trim();
+      const project  = String(entry.projectName ?? '').trim();
+      const category = String(entry.projectCategoryName ?? '').trim();
+      const duration = parseFloat(entry.duration) || 0;
+      const tooltip  = project + (category ? ` · ${category}` : '');
+      const accent = getCategoryAccent(category);
+
+      return `
+        <tr
+          class="entry-row"
+          draggable="true"
+          data-entry-id="${escapeHtml(id)}"
+          title="${escapeHtml(tooltip)}"
+          style="--entry-accent:${escapeHtml(accent)}"
+          aria-label="${escapeHtml(`${desc}. ${project || 'Unassigned project'}. ${category || 'Uncategorized'}. Value ${formatDuration(duration)}.`)}"
+        >
+          <td class="entry-category-cell"><div class="entry-category-bar" aria-hidden="true"></div></td>
+          <td><div class="entry-description">${escapeHtml(desc)}</div></td>
+          <td><div class="entry-project">${escapeHtml(project || 'Unassigned project')}</div></td>
+          <td><div class="entry-category-name">${escapeHtml(category || 'Uncategorized')}</div></td>
+          <td class="entry-value-cell"><span class="entry-duration">${formatDuration(duration)}</span></td>
+        </tr>`;
+    }
+
+    // ── Drag & Drop ──
+    function setupDragAndDrop() {
+      const root = document.getElementById('widget-root');
+
+      // Draggable entry rows
+      root.querySelectorAll('.entry-row').forEach(row => {
+        row.addEventListener('dragstart', e => {
+          draggedId = row.dataset.entryId;
+          row.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', draggedId);
+        });
+        row.addEventListener('dragend', () => {
+          row.classList.remove('dragging');
+        });
+      });
+
+      // Drop zones: entire day columns
+      root.querySelectorAll('.day-column').forEach(col => {
+        col.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          col.classList.add('drag-over');
+        });
+
+        col.addEventListener('dragleave', e => {
+          if (!col.contains(e.relatedTarget)) {
+            col.classList.remove('drag-over');
+          }
+        });
+
+        col.addEventListener('drop', e => {
+          e.preventDefault();
+          col.classList.remove('drag-over');
+
+          const targetKey = col.dataset.dateKey;
+          if (!draggedId || !targetKey) return;
+
+          const entry = timeEntries.find(en => String(en.timeentryid) === draggedId);
+          if (!entry) return;
+
+          const currentKey = entryDateKey(entry.date);
+          if (currentKey === targetKey) return;
+
+          const originalText = String(entry.date ?? '').trim();
+          const originalDate = parseEntryDate(originalText);
+          if (!originalDate) return;
+
+          if (/^\d{4}-\d{2}-\d{2}$/.test(originalText)) {
+            entry.date = targetKey;
+            updateEntry(entry);
+          } else {
+            const [y, mo, d] = targetKey.split('-').map(Number);
+            const updated = new Date(y, mo - 1, d, originalDate.getHours(), originalDate.getMinutes(), originalDate.getSeconds());
+            entry.date = updated.toISOString();
+            updateEntry(entry);
+          }
+
+          draggedId = null;
+          renderWidget();
+        });
+      });
+    }
+
+   
+
+    function parseProposals(data) {
+      getEntriesFromProposals(data);                  
+      currentWeekStart = getInitialWeekStart();
+      renderWidget();
+    }
+
+    async function loadPreviewData() {
+     /* try {
+        const response = await fetch('./dummyData.json', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Preview data request failed with ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!hasRenderedData) {
+          loadData(data);
+        }
+      } catch (error) {
+        if (!hasRenderedData) {
+          renderError('No data received from the host or dummyData.json.');
+        }
+      }*/
+     const SAMPLE_DATA_TIMEENTRIES = [
+    {
+      "timeentryid": "de961fbb-df4a-f111-bec6-7c1e521713fd",
+      "projectid": "09dd2bb6-032a-f111-88b5-002248325389",
+      "projectName": "AI Demo",
+      "projectCategory": "Invest",
+      "projectCategoryName": "Invest",
+      "taskDescription": "EPPC Meeting1",
+      "date": "2026-06-29",
+      "duration": 240
+    },
+    {
+      "timeentryid": "d7fd6221-e04a-f111-bec6-7c1e521713fd",
+      "projectid": "f277f4fc-d129-f111-88b5-002248325389",
+      "projectName": "Holidays",
+      "projectCategory": "Absence",
+      "projectCategoryName": "Absence",
+      "taskDescription": "KickOff Meetings Fusion devs",
+      "date": "2026-06-30",
+      "duration": 120
+    },
+    {
+      "timeentryid": "a728f637-e24a-f111-bec6-7c1e521713fd",
+      "projectid": "09dd2bb6-032a-f111-88b5-002248325389",
+      "projectName": "AI Demo",
+      "projectCategory": "Invest",
+      "projectCategoryName": "Invest",
+      "taskDescription": "E-Mails & News meeting",
+      "date": "2026-07-01",
+      "duration": 180
+    },
+    {
+      "timeentryid": "3902e1f9-404d-f111-bec6-7ced8dd6050a",
+      "projectid": "09e35d36-f129-f111-88b5-002248325389",
+      "projectName": "Magic React",
+      "projectCategory": "Standard",
+      "projectCategoryName": "Standard",
+      "taskDescription": "React Testing",
+      "date": "2026-07-02",
+      "duration": 240
+    }
+  ];
+  const SAMPLE_PROPOSALS = {
+    "dateFrom":"2026-06-29",
+    "dateTo":"2026-07-05",
+    "proposals":[
+      {"start":"2026-06-29",
+      "duration":60,
+      "title":"Power Apps Widgets",
+      "projectMatches":[
+          {"projectId":"09e35d36-f129-f111-88b5-002248325389","projectName":"Magic React","description":""},
+          {"projectId":"09dd2bb6-032a-f111-88b5-002248325389","projectName":"AI Demo","description":"A forward-thinking investment initiative showcasing practical AI applications across industries with measurable outcomes and scalable solutions."},
+          {"projectId":"f577f4fc-d129-f111-88b5-002248325389","projectName":"Dummy Project 10","description":"Dummy data project 10"}
+        ]
+      }
+    ]
+  };
+  dateFrom = SAMPLE_PROPOSALS.dateFrom;
+  dateTo = SAMPLE_PROPOSALS.dateTo;
+    myResult = {      
+    ...SAMPLE_PROPOSALS,
+    timeEntries: SAMPLE_DATA_TIMEENTRIES
+    };
+  proposals = SAMPLE_PROPOSALS.proposals.map(normalizeEntry);
+  timeEntries = SAMPLE_DATA_TIMEENTRIES.map(normalizeEntry);
+
+    parseProposals(SAMPLE_PROPOSALS);
+    }
+
+    // ── MCP App setup ──
+    version = "59";
     renderLoading();
 
-    const app = new App({ name: "tool-input-viewer", version: "1.0.0" });
-    try{
+    const app = new App({ name: 'time-tracker-weekly', version: '1.0.0' });
+    let proposals = {};
+    let timeEntries = [];
+    let dateFrom = null;
+    let dateTo = null;
+
     app.ontoolresult = (result) => {
       const data = result.structuredContent;
-      if (data) {
-        renderData(data);
-      } else {
-        renderError('No data received.');
-      }
+      parseProposals(result.structuredContent);
+      myResult = {
+        ...proposals,
+        timeEntries: timeEntries
+      }            
+      loadTimeEntries(dateFrom);
     };
 
+    
+
     app.onhostcontextchanged = (ctx) => {
-      if (ctx.theme) applyTheme(ctx.theme);
+      if (ctx?.theme) applyTheme(ctx.theme);
     };
 
     app.onteardown = () => ({});
 
-    await app.connect();
+    
 
-  
-    setTimeout(() => {
+    async function loadTimeEntries(nextWeekStart) {      
+      const d = dateKey(nextWeekStart);
+      myResult = {loading: d}
+        
+      try {
+        const result = await app.callServerTool({
+          name: 'new_timetrackermda_add_timeentry_to_weekview',
+          arguments: { start_date: d }
+        });                
+        if (!result.isError && result.structuredContent) {          
+          myResult = result.structuredContent;
+          timeEntries = result.structuredContent;
+          renderWidget();
+        }
+        else {          
+          myResult = {isLoaded: true, message: "no rows", result: result.structuredContent};
+          renderWidget();
+        }
+        const markdown = `Requested week change to ${d}`;   
+        await app.updateModelContext({
+          content: [{ type: "text", text: markdown }],
+        });
+        await app.sendLog({ level: 'info', message: `Week changed to ${d}` });
+
+      } catch (err) {
+        // falls back to client-side filtering of existing data
+        myResult = {isError: true, result: err};
+        renderWidget();
+      }
+     
+    }
+
+    /*
+    const callTimeEntrySaveTool = async (entry) =>{
+        const args ={timeentryid : entry.timeentryid, 
+            timentrydate: dateKey(entry.date),
+            timeentryduration: "60",
+            timeentryprojectid: entry.projectid}
+        myResult = {edit: args}
+        renderWidget();        
+        return app.callServerTool({
+          name: 'new_timetrackermda_timeentrysave',
+          arguments: args
+       });       
+    }*/
+
+     const callSaveDataTool = async (entry) =>{
+        const args ={
+            "agent":"data_entry_agent",
+            "message":
+               {
+                    "tool_name":"_save_record",
+                    "tool_output":{
+                        "contractVersion":"1.0.0",
+                        "correlationId":"24ca0cb9-a240-40cb-88fc-b5e3b17901f2",
+                        "decidedAt": (new Date()).toISOString(),
+                        "entityName":"cr7a1_timeentry",
+                        "entityPluralName":"cr7a1_timeentries",                    
+                        "fieldDecisions":[                            
+                            {"fieldName":"cr7a1_date",
+                              "status":"edited",
+                              "finalValue": entryDateKey(entry.date),
+                              "originalValue":"2026-05-12T00:00:00Z"
+                            }                            
+                        ],                       
+                        "recordId":entry.timeentryid, 
+                        "reviewerId":"00000000-0000-0000-0000-000000000000",
+                        "reviewId":"00000000-0000-0000-0000-000000000000",
+                        "status":"partially_approved"
+                    }
+                } 
+            };
+            //// "76b7ee00-3a50-f111-a824-0022481f023c",
+        myResult = {saving: args}
+        renderWidget();        
+        return app.callServerTool({
+          name: '_save_record',
+          arguments: args
+       });       
+    }
+
+    async function updateEntry(entry){
+      try{
+        const result = await callSaveDataTool(entry);
+        if (!result.isError && result.structuredContent) {          
+          myResult = result.structuredContent;          
+          renderWidget();
+        }
+        else {          
+          myResult = {isLoaded: true, message: "no rows", result: result.structuredContent};
+          renderWidget();
+        }
+      } catch (err) {
+        // falls back to client-side filtering of existing data
+        myResult = {isError: true, result: err};
+        renderWidget();
+      }
+       /* const args = { table_name: "cr7a1_timeentry", record_id: entry.timeentryid, 
+          column_names:["cr7a1_date"], 
+          source_text: `save time entry on cr7a1_date ${entry.date}`  };
+          */
+        /*const args = {
+          agent : "", 
+          message: {
+            tool_output: 
+            tool_name
+          }
+        }*/
+      
+
+     /*   app.sendLog({
+          level: "info",
+          data: "Update time entry on date " + entry.date + " for record_id: " + entry.timeentryid,
+          logger: "new_timetrackermda_add_timeentry_to_weekview",
+        });
+         const promptText =
+        `Update cr7a1_date for record_id "${entry.timeentryid}" to date ${entry.date}.`;
+        if (app?.sendMessage) {
+          await app.sendMessage({ role: "user", content: [{ type: "text", text: promptText }] });          
+        }
+        const result = await app.callServerTool({
+            name: 'edit_record',
+            arguments: args
+        })*/
+      
+    }
+
+    try {
+      await app.connect();
+
+      const hostCtx = app.getHostContext();
+      if (hostCtx?.theme) applyTheme(hostCtx.theme);
+
+      setTimeout(() => {
         if (!hasRenderedData) {
           loadPreviewData();
         }
       }, 800);
-  }
-  catch (err) {
-    loadPreviewData();
-    console.error(err);
-  }
+    } catch (error) {
+      await loadPreviewData();
+    }
   </script>
 </body>
 </html>

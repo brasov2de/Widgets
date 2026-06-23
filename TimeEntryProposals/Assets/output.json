@@ -1,13 +1,36 @@
 {
-  "dateFrom": "2026-06-22",
-  "dateTo": "2026-06-29",
-  "timeEntries": [],
-  "passedProposals": [
+  "dateFrom": "2026-06-29",
+  "dateTo": "2026-07-05",
+  "proposals": [
     {
-      "start": "2026-06-22T12:00:00Z",
-      "end": "2026-06-22T14:00:00Z",
+      "start": "2026-06-30T12:00:00Z",
       "duration": 120,
-      "title": "test Magic"
+      "title": "test Magic",
+      "projectMatches": [
+        {
+          "projectId": "09e35d36-f129-f111-88b5-002248325389",
+          "projectName": "Magic React"
+        },
+        {
+          "projectId": "f577f4fc-d129-f111-88b5-002248325389",
+          "projectName": "Dummy Project 10"
+        }
+      ]
+    },
+    {
+      "start": "2026-06-31T12:00:00Z",
+      "duration": 60,
+      "title": "EPPC",
+      "projectMatches": [
+        {
+          "projectId": "09dd2bb6-032a-f111-88b5-002248325389",
+          "projectName": "AI Demo"
+        },
+        {
+          "projectId": "c42cc97f-3d9a-4358-81ea-0ab1be01385a",
+          "projectName": "Epsilon"
+        }
+      ]
     }
   ]
 }

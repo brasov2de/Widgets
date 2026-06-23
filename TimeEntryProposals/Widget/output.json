@@ -3,30 +3,47 @@
   "dateTo": "2026-05-11",
   "timeEntries": [
     {
-      "id": "76b7ee00-3a50-f111-a824-0022481f023c",
-      "date": "2026-05-08T00:00:00Z",
+      "date": "2026-05-07T00:00:00Z",
       "duration_hours": 60,
-      "taskDescription": "Widgets filtering1",
-      "project": {
-        "id": "09e35d36-f129-f111-88b5-002248325389",
-        "name": "Magic React",
-        "category": null,
-        "description": null
-      },
-      "owner": "Diana Birkelbach"
+      "owner": "Diana Birkelbach",
+      "task_description": "Widgets filtering1",
+      "project_name": "Magic React",
+      "project_description": null
     }
   ],
-  "passedProposals": [
+  "proposals":[
+    {"start":"2026-06-29",
+    "duration":1,
+    "title":"Travel - Lufthansa flight to Copenhagen",
+    "projectMatches":[]
+    },
     {
-      "start": "2026-06-22T12:00:00Z",
-      "duration": 120,
-      "title": "test Magic",
-      "project": {
-        "id": "09e35d36-f129-f111-88b5-002248325389",
-        "name": "Magic React",
-        "category": null,
-        "description": null
-      }
-    }
-  ]
+      "start":"2026-06-30",
+      "duration":1,
+      "title":"ORBIS Solution Architects Know-How Panel",
+      "projectMatches":[]
+      },
+    {
+      "start":"2026-06-30",
+      "duration":1,
+      "title":"Microsoft 365 Platform weekly",
+      "projectMatches":[]
+      },
+      {
+        "start":"2026-06-30",
+        "duration":1,
+        "title":"Break",
+        "projectMatches":[
+          {"projectId":"f377f4fc-d129-f111-88b5-002248325389","projectName":"Absence"}
+        ]
+      },
+      {"start":"2026-07-01","duration":1,"title":"Fusion Devs JF Status Meeting","projectMatches":[]},
+      {"start":"2026-07-01","duration":1,"title":"Learning Days Orga","projectMatches":[]},
+      {"start":"2026-07-01","duration":1,"title":"Sync Diana + Andreas","projectMatches":[]},
+      {"start":"2026-07-01","duration":1,"title":"Break","projectMatches":[{"projectId":"f377f4fc-d129-f111-88b5-002248325389","projectName":"Absence"}]},
+      {"start":"2026-07-02","duration":1,"title":"Programmleiter Jour-Fixe","projectMatches":[]},
+      {"start":"2026-07-02","duration":1,"title":"Break","projectMatches":[{"projectId":"f377f4fc-d129-f111-88b5-002248325389","projectName":"Absence"}]},
+      {"start":"2026-07-03","duration":1,"title":"Break","projectMatches":[{"projectId":"f377f4fc-d129-f111-88b5-002248325389","projectName":"Absence"}]},
+      {"start":"2026-07-03","duration":1,"title":"Lufthansa return flight","projectMatches":[]},
+      {"start":"2026-07-04","duration":1,"title":"AI VSCode session","projectMatches":[{"projectId":"09dd2bb6-032a-f111-88b5-002248325389","projectName":"AI Demo"}]}]
 }
