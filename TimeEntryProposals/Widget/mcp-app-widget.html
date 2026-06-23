@@ -398,6 +398,99 @@
       box-shadow: 0 8px 18px rgba(0, 120, 212, 0.18);
     }
 
+    /* ── Proposal rows ── */
+    .proposal-row {
+      background: linear-gradient(90deg, #fffbeb, #fff8e1);
+    }
+    .proposal-row:hover {
+      background: #fef3c7 !important;
+      transform: translateY(-1px);
+    }
+    .proposal-category-bar {
+      background: repeating-linear-gradient(
+        45deg,
+        #f59e0b,
+        #f59e0b 4px,
+        #fde68a 4px,
+        #fde68a 8px
+      ) !important;
+    }
+    .proposal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #fef3c7;
+      border: 1px dashed #f59e0b;
+      color: #92400e;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .proposal-duration {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: transparent;
+      border: 1.5px dashed #f59e0b;
+      color: #92400e;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .proposal-projects {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      width: 100%;
+      max-width: 100%;
+    }
+    .proposal-projects .proposal-project-chip {
+      width: 100%;
+      justify-content: flex-start;
+      text-align: left;
+      align-items: center;
+    }
+    .proposal-project-chip {
+      appearance: none;
+      border: 1px solid #f59e0b;
+      background: #fff7ed;
+      color: #92400e;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .proposal-project-chip:hover {
+      transform: translateY(-1px);
+      background: #fef3c7;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.18);
+    }
+    .proposal-project-chip.is-selected {
+      background: #f59e0b;
+      color: #fff;
+      border-color: #d97706;
+      box-shadow: 0 6px 16px rgba(217, 119, 6, 0.22);
+    }
+    .proposal-project-chip.is-selected:hover {
+      background: #d97706;
+    }
+    .proposal-project-desc {
+      width: 100%;
+      font-size: 0.72rem;
+      color: var(--colorNeutralForeground2, #616161);
+      margin-top: 2px;
+      line-height: 1.25;
+    }
+
     @media (max-width: 640px) {
       body {
         padding: 12px;
@@ -497,12 +590,13 @@
 
     // ── State ──
     //let allEntries = [];
-    let version = "62";
+    let version = "67";
     let currentFilterParams = [];
     let currentWeekStart = getWeekStart(new Date());
     let draggedId = null;
     let hasRenderedData = false;
     let myResult = {};    
+    let proposalTargetProjects = {};
 
 
     // ── Theme ──
@@ -739,6 +833,15 @@
         if (key && key in byDay) byDay[key].push(entry);
       }
 
+      // Group proposals by start date
+      const proposalsByDay = {};
+      for (const key of weekKeys) proposalsByDay[key] = [];
+      const proposalList = Array.isArray(proposals) ? proposals : [];
+      for (const proposal of proposalList) {
+        const key = entryDateKey(proposal.start ?? '');
+        if (key && key in proposalsByDay) proposalsByDay[key].push(proposal);
+      }
+
       // Week total
       const weekMinutes = weekKeys.reduce(
         (sum, k) => sum + byDay[k].reduce((s, e) => s + (parseInt(e.duration) || 0), 0), 0
@@ -786,7 +889,7 @@
         </div>
         <div class="days-scroll">
           <div class="days-grid">
-            ${weekDays.map((day, i) => buildDayColumn(day, weekKeys[i], byDay[weekKeys[i]], today)).join('')}
+            ${weekDays.map((day, i) => buildDayColumn(day, weekKeys[i], byDay[weekKeys[i]], proposalsByDay[weekKeys[i]], today)).join('')}
           </div>
         </div>`;
 
@@ -805,11 +908,13 @@
       });
 
       setupDragAndDrop();
+      setupProposalSelection();
     }
 
-    function buildDayColumn(day, key, entries, today) {
+    function buildDayColumn(day, key, entries, dayProposals, today) {
       const isToday = key === today;
       const hasEntries = entries.length > 0;
+      const hasProposals = dayProposals && dayProposals.length > 0;
 
       return `
         <div class="day-column${isToday ? ' is-today' : ''}" data-date-key="${escapeHtml(key)}">
@@ -820,14 +925,15 @@
             </span>
           </div>
           <div class="entries-list">
-            ${hasEntries
-              ? buildEntriesTable(entries)
+            ${(hasEntries || hasProposals)
+              ? buildEntriesTable(entries, dayProposals || [], key)
               : '<div class="empty-day">Drop entries here</div>'}
           </div>
         </div>`;
     }
 
-    function buildEntriesTable(entries) {
+    function buildEntriesTable(entries, dayProposals, dayKey) {
+      const proposalRows = (dayProposals || []).map((proposal, index) => buildProposalRow(proposal, `${dayKey}-${index}`)).join('');
       return `
         <div class="entries-table-shell">
           <table class="entries-table" aria-label="Time entries">
@@ -842,6 +948,7 @@
             </thead>
             <tbody>
               ${entries.map(buildEntryRow).join('')}
+              ${proposalRows}
             </tbody>
           </table>
         </div>`;
@@ -872,6 +979,65 @@
           <td><div class="entry-category-name">${escapeHtml(category || 'Uncategorized')}</div></td>
           <td class="entry-value-cell"><span class="entry-duration">${formatDuration(duration)}</span></td>
         </tr>`;
+    }
+
+    function buildProposalRow(proposal, proposalKey) {
+      const title = String(proposal.title ?? '').trim() || '(no title)';
+      const duration = parseFloat(proposal.duration) || 0;
+      const matches = Array.isArray(proposal.projectMatches) ? proposal.projectMatches : [];
+      const selectedIndex = Number.isInteger(proposalTargetProjects[proposalKey])
+        ? proposalTargetProjects[proposalKey]
+        : 0;
+
+      const projectCell = matches.length > 0 ? `
+        <div class="proposal-projects" data-proposal-key="${escapeHtml(proposalKey)}">
+          ${matches.map((match, index) => {
+            const name = String(match.projectName ?? '').trim() || 'Unnamed project';
+            const desc = String(match.description ?? '').trim();
+            return `
+              <button
+                type="button"
+                class="proposal-project-chip${index === selectedIndex ? ' is-selected' : ''}"
+                data-proposal-key="${escapeHtml(proposalKey)}"
+                data-project-index="${index}"
+                title="${escapeHtml(desc || 'Select this project')}">
+                ${escapeHtml(name)}
+              </button>`;
+          }).join('')}
+        </div>` : '<div class="proposal-project-primary" style="color:#a0a0a0">No suggestions</div>';
+
+      return `
+        <tr class="proposal-row" aria-label="Proposal: ${escapeHtml(title)}">
+          <td class="entry-category-cell"><div class="entry-category-bar proposal-category-bar" aria-hidden="true"></div></td>
+          <td>
+            <div class="entry-description" style="font-style:italic;color:#92400e">${escapeHtml(title)}</div>
+            <div class="proposal-badge">&#10024; Proposal</div>
+          </td>
+          <td>${projectCell}</td>
+          <td></td>
+          <td class="entry-value-cell"><span class="proposal-duration">${formatDuration(duration)}</span></td>
+        </tr>`;
+    }
+
+    function setupProposalSelection() {
+      const root = document.getElementById('widget-root');
+
+      root.querySelectorAll('.proposal-project-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const proposalKey = chip.dataset.proposalKey;
+          const projectIndex = parseInt(chip.dataset.projectIndex, 10);
+          if (!proposalKey || !Number.isInteger(projectIndex)) return;
+
+          proposalTargetProjects[proposalKey] = projectIndex;
+
+          const container = root.querySelector(`.proposal-projects[data-proposal-key="${CSS.escape(proposalKey)}"]`);
+          if (!container) return;
+
+          container.querySelectorAll('.proposal-project-chip').forEach((button, index) => {
+            button.classList.toggle('is-selected', index === projectIndex);
+          });
+        });
+      });
     }
 
     // ── Drag & Drop ──
