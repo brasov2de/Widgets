@@ -1067,12 +1067,12 @@
         
       try {
         const result = await app.callServerTool({
-          name: 'new_timetrackermda_add_timeentry_to_weekview',
+          name: 'new_timetrackermda_fetch_timeentries_by_week',
           arguments: { start_date: d }
         });                
         if (!result.isError && result.structuredContent) {          
           myResult = result.structuredContent;
-          timeEntries = result.structuredContent;
+          timeEntries = result.structuredContent?.timeEntries ?? [];
           renderWidget();
         }
         else {          
