@@ -497,12 +497,13 @@
 
     // ── State ──
     //let allEntries = [];
+    let version = "61";
     let currentFilterParams = [];
     let currentWeekStart = getWeekStart(new Date());
     let draggedId = null;
     let hasRenderedData = false;
     let myResult = {};    
-    let version = "34";
+
 
     // ── Theme ──
     function applyTheme(theme) {
@@ -521,13 +522,12 @@
 
     // ── Date utilities ──
     function getWeekStart(date) {
-      /*const d = new Date(date);
+      const d = new Date(date);
       const day = d.getDay(); // 0=Sun … 6=Sat
       const diff = day === 0 ? -6 : 1 - day; // shift to Monday
       d.setDate(d.getDate() + diff);
       d.setHours(0, 0, 0, 0);
-      return d;*/
-      return date;
+      return d;      
     }
 
     function addDays(date, days) {
@@ -665,7 +665,7 @@
 
     function getEntriesFromProposals(data) {
       if (Array.isArray(data?.proposals)) {
-        proposals = data.proposals.map(normalizeEntry);
+        proposals = (data?.proposals ?? []).map(normalizeEntry);
       }
       dateFrom = parseEntryDate(data?.dateFrom);
       dateTo = parseEntryDate(data?.dateTo);      
@@ -1031,8 +1031,7 @@
     parseProposals(SAMPLE_PROPOSALS);
     }
 
-    // ── MCP App setup ──
-    version = "59";
+    // ── MCP App setup ──    
     renderLoading();
 
     const app = new App({ name: 'time-tracker-weekly', version: '1.0.0' });
@@ -1042,12 +1041,12 @@
     let dateTo = null;
 
     app.ontoolresult = (result) => {
-      const data = result.structuredContent;
-      parseProposals(result.structuredContent);
+      const data = result.structuredContent;      
       myResult = {
         ...proposals,
         timeEntries: timeEntries
-      }            
+      }              
+      parseProposals(result.structuredContent);
       loadTimeEntries(dateFrom);
     };
 
@@ -1071,7 +1070,10 @@
           arguments: { start_date: d }
         });                
         if (!result.isError && result.structuredContent) {          
-          myResult = result.structuredContent;
+          myResult = {
+            ...proposals, 
+            timeEntries: result.structuredContent?.timeEntries ?? []
+          };
           timeEntries = result.structuredContent?.timeEntries ?? [];
           renderWidget();
         }
@@ -1151,6 +1153,7 @@
         }
         else {          
           myResult = {isLoaded: true, message: "no rows", result: result.structuredContent};
+          loadPreviewData();
           renderWidget();
         }
       } catch (err) {
