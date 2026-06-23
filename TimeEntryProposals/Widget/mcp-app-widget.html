@@ -497,7 +497,7 @@
 
     // ── State ──
     //let allEntries = [];
-    let version = "61";
+    let version = "62";
     let currentFilterParams = [];
     let currentWeekStart = getWeekStart(new Date());
     let draggedId = null;
@@ -941,7 +941,13 @@
    
 
     function parseProposals(data) {
-      getEntriesFromProposals(data);                  
+      getEntriesFromProposals(data);   
+      myResult = {
+        proposals: proposals,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        timeEntries: timeEntries
+      }                
       currentWeekStart = getInitialWeekStart();
       renderWidget();
     }
@@ -1022,7 +1028,9 @@
   dateFrom = SAMPLE_PROPOSALS.dateFrom;
   dateTo = SAMPLE_PROPOSALS.dateTo;
     myResult = {      
-    ...SAMPLE_PROPOSALS,
+    proposals: SAMPLE_PROPOSALS.proposals,
+    dateFrom: SAMPLE_PROPOSALS.dateFrom,
+    dateTo: SAMPLE_PROPOSALS.dateTo,
     timeEntries: SAMPLE_DATA_TIMEENTRIES
     };
   proposals = SAMPLE_PROPOSALS.proposals.map(normalizeEntry);
@@ -1041,11 +1049,7 @@
     let dateTo = null;
 
     app.ontoolresult = (result) => {
-      const data = result.structuredContent;      
-      myResult = {
-        ...proposals,
-        timeEntries: timeEntries
-      }              
+      const data = result.structuredContent;                         
       parseProposals(result.structuredContent);
       loadTimeEntries(dateFrom);
     };
@@ -1071,8 +1075,10 @@
         });                
         if (!result.isError && result.structuredContent) {          
           myResult = {
-            ...proposals, 
-            timeEntries: result.structuredContent?.timeEntries ?? []
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+            proposals: proposals,             
+            timeEntries: result.structuredContent
           };
           timeEntries = result.structuredContent?.timeEntries ?? [];
           renderWidget();
